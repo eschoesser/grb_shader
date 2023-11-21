@@ -166,6 +166,7 @@ _ep_lookup = dict(log10normal=Log10normalEp,
 
 _temporal_lookup = dict(constant_lognormal=ConstantProfile_Lognormal,
                         constant_log10normal=ConstantProfile_Log10normal,
+                        constant_normal=ConstantProfile_Normal,
                         constant_lognormal_trunc=ConstantProfile_Lognormal_Trunc,
                         constant_log10normal_trunc=ConstantProfile_Log10normal_Trunc,
                         pulse_lognormal=PulseProfile_Lognormal,

@@ -127,12 +127,16 @@ class GodMultiverse(object):
 
         #function for one simulated population with params set in file p
         def sim_one_population(i,client=None):
-            setup["seed"] = int(seed + i * 10)
-            gp = GRBPop.from_dict(setup)
+            file_path = self._pops_dir / f"{self._pops_base_file_name}_{int(seed + i *10)}.h5"
+            if file_path.exists():
+                logger.info(f"{file_path} already exists")
+            else:
+                setup["seed"] = int(seed + i * 10)
+                gp = GRBPop.from_dict(setup)
 
-            gp.engage()
+                gp.engage()
 
-            gp.population.writeto(self._pops_dir / f"{self._pops_base_file_name}_{int(seed + i *10)}.h5")
+                gp.population.writeto(file_path)
 
         logger.info(f'Compute {self.n_universes} populations')
 
@@ -263,21 +267,25 @@ class GodMultiverse(object):
             Universe_class = GBM_CPL_Universe
         
         def sim_one_universe(i,client=None):
-
             pop_path_i = self.population_files[i]
             # take population stem name as name for folder of simulated GRBs
             save_path_stem_i = pop_path_i.stem.strip(self._pops_base_file_name)
             save_path_i = self._surveys_path / save_path_stem_i
             #create new folder if non-existing yet
             save_path_i.mkdir(parents=True, exist_ok=True)
+            file_path = str(self._surveys_path / f'{surveys_base_file_name}{save_path_stem_i}.h5')
+            if Path(file_path).exists():
+                logger.info(f"{file_path} already exists")
+            else:
+                logger.info(f'sim universe {i}')
 
-            universe = Universe_class(self.population_files[i],save_path=save_path_i)
-            universe.go(client)
-            #save as non-processed survey
-            universe.save(str(self._surveys_path / f'{surveys_base_file_name}{save_path_stem_i}.h5'))
-            #del universe
+                universe = Universe_class(self.population_files[i],save_path=save_path_i)
+                #logger.info(f'Universe Go')
+                universe.go(client)
+                #save as non-processed survey
+                universe.save(file_path)
+                del universe
 
-        logger.info('Go Universes')
         
         #if client is not None:
 
@@ -286,7 +294,7 @@ class GodMultiverse(object):
             #compute GRBs in parallel within one universe
             logger.info('Use internal parallelization')
 
-            for i in tqdm(range(self._n_universes),desc='Go universe - internally parallel'):
+            for i in range(self._n_universes):
 
                 sim_one_universe(i=i,client=client)
             
@@ -313,6 +321,7 @@ class GodMultiverse(object):
         if len(self._survey_files) == 0:
             logger.error('No surveys computed. Check directory names again.')
             raise RuntimeError()
+        logger.info('Go Universes done')
 
         self._universes_computed = True
     
@@ -356,14 +365,14 @@ class GodMultiverse(object):
             survey = Survey.from_file(self.survey_files[i])
             survey.process(GBMTrigger,threshold=threshold_trigger,client=client,serial=serial)
             survey.write(self.survey_files[i])
-            del survey
+            #del survey
 
         if client is not None:
 
             if internal_parallelization:
                 logger.info('Use internal parallelization')
 
-                for i in tqdm(range(self._n_universes),desc='Process Surveys - internally parallel'):
+                for i in range(self._n_universes):
                     process_one_survey(i=i,client=client,serial=False)
             
             else:
@@ -382,6 +391,7 @@ class GodMultiverse(object):
             sims = [process_one_survey(i) for i in tqdm(range(self._n_universes),desc='Process Surveys - serial')]
 
         self._surveys_processed = True 
+        logger.info('Processed')
 
     def process_surveys(
         self,
@@ -559,7 +569,7 @@ class GodMultiverse(object):
             surveys_path=surveys_path,
             surveys_base_file_name=surveys_base_file_name,
             client=client,
-            internal_parallelization=False
+            internal_parallelization=internal_parallelization
             )
 
         if hard_flux_selec == False:
@@ -568,13 +578,15 @@ class GodMultiverse(object):
                 threshold_trigger=threshold_trigger,
                 internal_parallelization=internal_parallelization)
             
-            if save_det_grbs_as_fits:
-                self._save_detected_grbs_as_fits(
-                    client=client,
-                    internal_parallelization=internal_parallelization
-                )
         else:
             logger.info('Do not use GBM trigger as hard flux selection was already applied as alternative')
+            
+        if save_det_grbs_as_fits:
+            self._save_detected_grbs_as_fits(
+                client=client,
+                internal_parallelization=internal_parallelization
+            )
+        
 
 class RestoredMultiverse(object):
 
@@ -638,6 +650,8 @@ class RestoredMultiverse(object):
         for i, pop in enumerate(tqdm(self._populations, desc="counting galaxies")):
             survey = self._surveys[i]
             self._catalog.read_population(pop,unc_angle=0.)
+            print(len(self._catalog.selected_galaxies))
+            print(survey.n_grbs)
 
             #Number of selected galaxies has to be same as number of simulated GRBs
             assert len(self._catalog.selected_galaxies) == survey.n_grbs
@@ -734,7 +748,7 @@ class RestoredMultiverse(object):
         ax.set_yticks(x)
         ax.set_yticklabels(names)
         ax.set_xscale('symlog',linthresh=1)
-        ax.set_xlabel('# Spatial Coincidences')
+        ax.set_xlabel('Number Spatial Coincidences')
         ax.xaxis.set_minor_locator(MinorSymLogLocator(1))
         ax.grid(which='major',axis='x')
         plt.tight_layout()

@@ -62,6 +62,21 @@ class DurationSampler(ps.AuxiliarySampler):
         # add that other 10 %
 
         self._true_values = 1.1 * t90
+        
+class LogDurationSampler(ps.AuxiliarySampler):
+    _auxiliary_sampler_name = "LogDurationSampler"
+    def __init__(self):
+        "samples how long the pulse lasts"
+
+        super(LogDurationSampler, self).__init__(name="duration", observed=False)
+
+    def true_sampler(self, size):
+
+        t90 = np.power(10,self._secondary_samplers["t90"].true_values)
+
+        # add that other 10 %
+
+        self._true_values = 1.1 * t90
 
 class TriangleT90Sampler_Cor(ps.AuxiliarySampler):
     """

@@ -2,7 +2,7 @@
 from tkinter.tix import TCL_DONT_WAIT
 from .base_profile import BaseProfile
 import popsynth as ps
-from grb_shader.samplers import DurationSampler, TDecaySampler, TRiseSampler, TriangleT90Sampler_Cor, EisoSampler
+from grb_shader.samplers import DurationSampler, LogDurationSampler, TDecaySampler, TRiseSampler, TriangleT90Sampler_Cor, EisoSampler
 
 from ..utils.logging import setup_log
 
@@ -66,6 +66,26 @@ class PulseProfile_Lognormal(BaseProfile):
         tau.tau = tau_tau
 
         self._quantities = [duration, trise, tau]
+        
+class ConstantProfile_Normal(BaseProfile):
+    def _construct(self, t90_mu, t90_tau):
+        """
+        Samplers for constant temporal profile parameters
+        t90 is sampled from full Log Normal distribution
+        """
+        logger.debug('Use ConstantProfile_Lognormal')
+
+        t90 = ps.aux_samplers.NormalAuxSampler(
+            name="t90", observed=False)
+
+        t90.mu = t90_mu
+        t90.tau = t90_tau
+
+        duration = LogDurationSampler()
+
+        duration.set_secondary_sampler(t90)
+
+        self._quantities = [duration]
 
 class PulseProfile_Lognormal_Trunc(BaseProfile):
 

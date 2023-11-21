@@ -562,13 +562,14 @@ class LocalVolume(object):
 
         return fig, ax
     
-    def show_all_galaxies_area(self, ax=None,frame="icrs",cmap='viridis',uselog=True):
+    def show_all_galaxies_area(self, ax=None,frame="icrs",cmap='viridis',uselog=True,figsize=(7,5),**kwargs):
         # scatter plot of all galaxies, coloring by area
         if ax is None:
-            fig, ax =plt.subplots(figsize=(7,5))
+            fig, ax =plt.subplots(figsize=figsize)
             ax = plt.subplot(111,projection="astro degrees mollweide")
         else:
             fig = ax.get_figure()
+            ax = plt.subplot(111,projection="astro degrees mollweide")
         
         _, colors = array_to_cmap(self.areas, cmap=cmap, use_log=uselog)
         
@@ -579,22 +580,23 @@ class LocalVolume(object):
 
         fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap),
                     ax=ax, label=r'Angular Area [rad$^2$]',
-                    pad=0.1,fraction=0.08,orientation="horizontal")
+                    pad=0.12,fraction=0.08,orientation="horizontal")
 
         i = 0
         for _, galaxy in self.galaxies.items():
                 
             ax.scatter(x=float(galaxy.center.ra.deg), 
                         y=float(galaxy.center.dec.deg),
-                        color=colors[i],s=7,
+                        color=colors[i],
                         zorder=np.log(self.areas[i])+20,
                         #edgecolor='k',
-                        transform=ax.get_transform(frame))
+                        transform=ax.get_transform(frame),
+                        **kwargs)
             
             i+=1
         return fig, ax
 
-    def show_all_galaxies(self, ax=None, color='C00',frame="icrs",scatter=True,s=1):
+    def show_all_galaxies(self, ax=None, color='C00',frame="icrs",scatter=True,s=1,edgecolor=None):
         if ax is None:
             fig, ax = plt.subplots(
                 subplot_kw={"projection": "astro degrees mollweide"})
@@ -613,7 +615,8 @@ class LocalVolume(object):
                 a,
                 b,
                 galaxy.angle,
-                color=color,
+                facecolor=color,
+                edgecolor=edgecolor,
                 alpha=0.6,
                 label=galaxy.name,
                 zorder=3
@@ -628,8 +631,8 @@ class LocalVolume(object):
                     galaxy.center.ra.deg,
                     galaxy.center.dec.deg,
                     transform=ax.get_transform("icrs"),
-                    color=color,
-                    edgecolor=color,
+                    facecolor=color,
+                    edgecolor=edgecolor,
                     s=s,
                 )
         return fig, ax

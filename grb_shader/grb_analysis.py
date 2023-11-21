@@ -687,7 +687,7 @@ class GRBAnalysis_constant(object):
 
                     plt.savefig(dir_figs / f'{self._name_chosen_grb}_{i}_median_fit_3ml.pdf')
 
-    def corner_plot(self,savefig=False, dir_fig=None, dir_bayes_results=None,renamed_parameters=None,**kwargs):
+    def corner_plot(self,savefig=False, dir_fig=None, dir_bayes_results=None,renamed_parameters=None,figsize=(6,6),**kwargs):
 
         if self._sampled == False:
 
@@ -703,7 +703,7 @@ class GRBAnalysis_constant(object):
             figs = []
             for i in range(len(self._bayes_results)):
 
-                fig,ax = plt.subplots(3,3,figsize=(6,6))
+                fig,ax = plt.subplots(3,3,figsize=figsize)
 
                 if self._pulse_profile:
                     t=0.5*(self._stop_times[i]-self._start_times[i])
