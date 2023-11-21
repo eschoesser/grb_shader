@@ -529,7 +529,7 @@ ytick.labelsize:     small  # font size of the tick labels
 #legend.numpoints:     1        # the number of marker points in the legend line
 #legend.scatterpoints: 1        # number of scatter points
 #legend.markerscale:   1.0      # the relative size of legend markers vs. original
-legend.fontsize:      small
+#legend.fontsize:      small
 #legend.labelcolor:    None
 #legend.title_fontsize: None    # None sets to the same as the default axes.
 
@@ -570,7 +570,7 @@ figure.dpi:         120       # figure dots per inch
                                # expressed as a fraction of the average axis height
 
 ## Figure layout
-figure.autolayout: True  # When True, automatically adjust subplot
+#figure.autolayout: True  # When True, automatically adjust subplot
                            # parameters to make the plot fit the figure
                            # using `tight_layout`
 #figure.constrained_layout.use: False  # When True, automatically make plot
@@ -587,7 +587,7 @@ figure.autolayout: True  # When True, automatically adjust subplot
 ## ***************************************************************************
 #image.aspect:          equal        # {equal, auto} or a number
 #image.interpolation:   antialiased  # see help(imshow) for options
-#image.cmap:            viridis      # A colormap name, gray etc...
+image.cmap:            cividis      # A colormap name, gray etc...
 #image.lut:             256          # the size of the colormap lookup table
 #image.origin:          upper        # {lower, upper}
 #image.resample:        True
