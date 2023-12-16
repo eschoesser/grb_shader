@@ -78,6 +78,20 @@ class LogDurationSampler(ps.AuxiliarySampler):
 
         self._true_values = 1.1 * t90
 
+class LogDurationSampler_rest2obs(ps.AuxiliarySampler):
+    _auxiliary_sampler_name = "LogDurationSampler_rest2obs"
+    def __init__(self,uses_distance=True):
+        "samples how long the pulse lasts"
+
+        super(LogDurationSampler_rest2obs, self).__init__(name="duration", observed=False)
+
+    def true_sampler(self, size):
+        #scale by redshift
+        t90 = np.power(10,self._secondary_samplers["t90"].true_values) * (1 + self._distance)
+        # add that other 10 %
+
+        self._true_values = 1.1 * t90
+
 class TriangleT90Sampler_Cor(ps.AuxiliarySampler):
     """
     Assume Ep-Eiso correlation

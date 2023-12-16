@@ -2,7 +2,7 @@
 from tkinter.tix import TCL_DONT_WAIT
 from .base_profile import BaseProfile
 import popsynth as ps
-from grb_shader.samplers import DurationSampler, LogDurationSampler, TDecaySampler, TRiseSampler, TriangleT90Sampler_Cor, EisoSampler
+from grb_shader.samplers import DurationSampler, LogDurationSampler, LogDurationSampler_rest2obs,TDecaySampler, TRiseSampler, TriangleT90Sampler_Cor, EisoSampler
 
 from ..utils.logging import setup_log
 
@@ -71,7 +71,8 @@ class ConstantProfile_Normal(BaseProfile):
     def _construct(self, t90_mu, t90_tau):
         """
         Samplers for constant temporal profile parameters
-        t90 is sampled from full Log Normal distribution
+        log10(t90_em) is sampled from non-truncated normal distribution
+        t90_obs = t90_em * (1+z)
         """
         logger.debug('Use ConstantProfile_Lognormal')
 
@@ -82,6 +83,27 @@ class ConstantProfile_Normal(BaseProfile):
         t90.tau = t90_tau
 
         duration = LogDurationSampler()
+
+        duration.set_secondary_sampler(t90)
+
+        self._quantities = [duration]
+        
+class ConstantProfile_Normal_rest2obs(BaseProfile):
+    def _construct(self, t90_mu, t90_tau):
+        """
+        Samplers for constant temporal profile parameters
+        log10(t90_em) is sampled from non-truncated normal distribution
+        t90_obs = t90_em * (1+z)
+        """
+        logger.debug('Use ConstantProfile_Lognormal')
+
+        t90 = ps.aux_samplers.NormalAuxSampler(
+            name="t90", observed=False)
+
+        t90.mu = t90_mu
+        t90.tau = t90_tau
+
+        duration = LogDurationSampler_rest2obs()
 
         duration.set_secondary_sampler(t90)
 
