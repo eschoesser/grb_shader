@@ -8,16 +8,16 @@ from cosmogrb.instruments.gbm import GBM_CPL_Constant_Universe
 if __name__ == '__main__':
 
     # path where simulations are stored
-    sim_path = "/data/eschoe/grb_shader/sims/220822/ghirl_c_t90fit_pulse/catalogselec/"
+    sim_path = "/ptmp/eschoe/sims/20231218_test/"
     # path of parameter file
-    param_file = "ghirlanda2016_c_t90fit_pulse.yml"
+    param_file = "ghirlanda2016_c_normal.yml"
 
-    n_cores = 20
-    n_sims = 500
+    n_cores = 40
+    n_sims = 10
 
-    constant_temporal_profile = False
-    catalog_selec = True
-    internal_parallelization = False
+    constant_temporal_profile = True
+    catalog_selec = False
+    internal_parallelization = True
     hard_flux_selec = False
 
     with LocalCluster(n_workers=n_cores,threads_per_worker=1) as cluster:
