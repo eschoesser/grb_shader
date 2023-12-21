@@ -147,6 +147,8 @@ class RestoredUniverse(object):
 
         ax.legend(loc='upper right')
         ax.set_xlabel(r'z')
+        
+        return ax
 
     def hist_ep(
         self,
@@ -213,6 +215,8 @@ class RestoredUniverse(object):
 
         ax.set_xscale('log')
         ax.set_yscale('log')
+        
+        return ax
 
     def hist_luminosity(
         self,
@@ -267,8 +271,70 @@ class RestoredUniverse(object):
         ax.set_xscale('log')
         ax.set_yscale('log')
         ax.set_xlabel(r'L [erg/s]')
+        
+        return ax
+        
+    def hist_duration_normal(
+        self,
+        n_bins=50,
+        ax=None,
+        normalized_hist=False,
+        det=True,
+        obs=True,
+        plot_logn=True,
+        mu= -0.959,
+        sigma= 0.90
+    ):
+        # Rest frame duration = Input normal distribution
+        
+        if self.survey is None:
+            logger.info('no survey defined')
+            det = False
 
-    def hist_t90(
+        if ax is None:
+            fig, ax = plt.subplots()
+            
+        if obs:
+            z = np.zeros_like(self.pop.distances)
+            z_mask = np.zeros_like(self.pop.distances[self.mask_det])
+        else:
+            #Durations are already in observed frame
+            #When comparing to sample distribution, scaling back to rest frame is needed
+            z = self.pop.distances
+            z_mask = self.pop.distances[self.mask_det]
+       
+        ax.set_xlabel(r'ln($T_{90}$/s)')
+        # if normal instead of lognormal distribution is used (as in Ghirlanda, 2016, eq. 17)
+        counts, bins = np.histogram(np.log10(self.pop.duration),bins=n_bins)
+        int_hist= np.trapz(counts,(bins[1:]+bins[:-1])/2)
+        if plot_logn:
+            x = np.linspace(min(np.log10(self.pop.duration)),max(np.log10(self.pop.duration)),n_bins)
+
+            gauss = Gaussian()
+            gauss.mu=mu
+            gauss.sigma=sigma
+
+            if normalized_hist:
+                ax.plot(x,gauss.evaluate_at(x),color='C00')
+            else:
+                ax.plot(x,gauss.evaluate_at(x)*int_hist,color='C00')
+
+        if normalized_hist:
+            ax.set_ylabel(r'Normalized n$_\mathrm{GRBs}$')
+            ax.hist(np.log10(self.pop.duration/(1+z)),bins=n_bins,alpha=0.7,label='all',density=True)
+        else:
+            ax.set_ylabel(r'n$_\mathrm{GRBs}$')
+            ax.hist(np.log10(self.pop.duration/(1+z)),bins=n_bins,alpha=0.7,label='all')
+
+        if det:
+            if normalized_hist:
+                ax.hist(np.log10(self.pop.duration[self.mask_det]/(1+z_mask)),bins=n_bins,alpha=0.7,label='detected',density=True)
+            else:
+                ax.hist(np.log10(self.pop.duration[self.mask_det]/(1+z_mask)),bins=n_bins,alpha=0.7,label='detected')
+            
+        return ax 
+
+    def hist_duration(
         self,
         n_bins=50,
         ax=None,
@@ -280,7 +346,8 @@ class RestoredUniverse(object):
         mu = -0.196573,
         sigma=0.541693
     ):
-
+        # Rest frame duration = Input normal distribution
+        
         if self.survey is None:
             logger.info('no survey defined')
             det = False
@@ -315,42 +382,44 @@ class RestoredUniverse(object):
 
             if normalized_hist:
                 ax.set_ylabel(r'Normalized n$_\mathrm{GRBs}$')
-                ax.hist(np.log(self.pop.duration*(1+z)),bins=n_bins,alpha=0.7,label='all',density=True)
+                ax.hist(np.log(self.pop.duration),bins=n_bins,alpha=0.7,label='all',density=True)
             else:
                 ax.set_ylabel(r'n$_\mathrm{GRBs}$')
-                ax.hist(np.log(self.pop.duration*(1+z)),bins=n_bins,alpha=0.7,label='all')
+                ax.hist(np.log(self.pop.duration),bins=n_bins,alpha=0.7,label='all')
 
             if det:
                 if normalized_hist:
-                    ax.hist(np.log(self.pop.duration[self.mask_det]*(1+z_mask)),bins=n_bins,alpha=0.7,label='detected',density=True)
+                    ax.hist(np.log(self.pop.duration[self.mask_det]/(1+z_mask)),bins=n_bins,alpha=0.7,label='detected',density=True)
                 else:
-                    ax.hist(np.log(self.pop.duration[self.mask_det]*(1+z_mask)),bins=n_bins,alpha=0.7,label='detected')
+                    ax.hist(np.log(self.pop.duration[self.mask_det]/(1+z_mask)),bins=n_bins,alpha=0.7,label='detected')
         else: 
-            bins2 = np.linspace(min(np.log(self.pop.duration*(1+z))),max(np.log(self.pop.duration*(1+z))),n_bins)
-            counts, bins = np.histogram(np.log(self.pop.duration*(1+z)),bins=bins2)
+            bins2 = np.linspace(min(np.log(self.pop.duration)/(1+z_mask)),max(np.log(self.pop.duration)/(1+z_mask)),n_bins)
+            counts, bins = np.histogram(np.log(self.pop.duration/(1+z_mask)),bins=bins2)
             int_hist= np.sum(counts)
             if normalized_hist:
                 ax.set_ylabel(r'Normalized n$_\mathrm{GRBs}$')
-                intervals= logbins_norm_histogram(self.pop.duration*(1+z),n_bins=n_bins,ax=ax)
+                intervals= logbins_norm_histogram(self.pop.duration/(1+z_mask),n_bins=n_bins,ax=ax)
             else:
                 ax.set_ylabel(r'Scaled n$_\mathrm{GRBs}$')
-                intervals=logbins_scaled_histogram(self.pop.duration*(1+z),n_bins=n_bins,ax=ax)
+                intervals=logbins_scaled_histogram(self.pop.duration/(1+z_mask),n_bins=n_bins,ax=ax)
 
             if det:
                 if normalized_hist:
-                    logbins_norm_histogram(self.pop.duration[self.mask_det]*(1+z_mask),ax=ax,intervals=intervals)
+                    logbins_norm_histogram(self.pop.duration[self.mask_det]/(1+z_mask),ax=ax,intervals=intervals)
                 else:
-                    logbins_scaled_histogram(self.pop.duration[self.mask_det]*(1+z_mask),ax=ax,intervals=intervals)
+                    logbins_scaled_histogram(self.pop.duration[self.mask_det]/(1+z_mask),ax=ax,intervals=intervals)
             
             if plot_logn:
                 if normalized_hist:
-                    ax.plot(bins2,0.9*log10normal(bins2,mu,sigma),color='C00')
+                    ax.plot(bins2,log10normal(bins2,mu,sigma),color='C00')
                 else:
-                    ax.plot(bins2,0.9*int_hist*log10normal(bins2,mu,sigma),color='C00')
+                    ax.plot(bins2,int_hist*log10normal(bins2,mu,sigma),color='C00')
             ax.set_xscale('log')
             ax.set_xlim(5e-3,1e1)
 
-            ax.set_xlabel(r'$T_{90}$ [s]')
+            ax.set_xlabel(r'$\Delta T_{r}$ [s]')
+            
+        return ax 
 
     def hist_alpha(
         self,
@@ -404,6 +473,8 @@ class RestoredUniverse(object):
 
         ax.set_xlabel(r'$\alpha$')
         ax.set_xlim(-1.25,0)
+        
+        return ax
 
     def plot_flux_redshift_diagram(self,ax=None,det=True,alpha=0.3,markersize=1):
         if ax is None:
@@ -419,6 +490,8 @@ class RestoredUniverse(object):
         ax.set_xlabel(r'z')
         ax.set_ylabel(r'F [erg/cm$^2$/s]')
         ax.set_yscale('log')
+        
+        return ax
 
     def plot_flux_t90_diagram(self,ax=None,det=True,alpha=0.3,markersize=1):
         if self.survey is None:
@@ -434,6 +507,8 @@ class RestoredUniverse(object):
         ax.set_ylabel(r'F [erg/cm$^2$/s]')
         ax.set_yscale('log')
         ax.set_xscale('log')
+        
+        return ax
 
     def hist_parameters(
         self,
@@ -461,7 +536,7 @@ class RestoredUniverse(object):
         alpha_sigma=0.2,
         alpha_lower_bound=-1.5,
         alpha_upper_bound=0,
-        t90_obs=True,
+        t90_obs=False,
         t90_norm=True,
         t90_mu = -0.196573,
         t90_sigma=0.541693,
@@ -538,14 +613,13 @@ class RestoredUniverse(object):
             upper_bound=alpha_upper_bound
         )
 
-        self.hist_t90(
+        self.hist_duration_normal(
             n_bins=n_bins,
             ax=ax[2][1],
             normalized_hist=normalized_hist,
             det=det,
             plot_logn=plot_pdf,
             obs=t90_obs,
-            norm=t90_norm,
             mu = t90_mu,
             sigma=t90_sigma
         )
@@ -553,3 +627,5 @@ class RestoredUniverse(object):
         self.plot_flux_redshift_diagram(ax=ax[3][0],alpha=alpha,markersize=markersize)
 
         self.plot_flux_t90_diagram(ax=ax[3][1],alpha=alpha,markersize=markersize)
+        
+        return ax
